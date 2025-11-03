@@ -1,0 +1,403 @@
+# Project: Seis2D (lightweight scaffold)
+# Location target: C:\\Users\\hafiz.baharuddin\\Documents\\Python\\Seis2D
+# ---------------------------------------------------------------------------------
+# This single doc shows the INITIAL file/folder layout and the minimal code for a
+# tiny, working PyQt6 window. Copy these files into the indicated paths.
+# We keep deps light (only PyQt6 to start). We'll add numpy/pyqtgraph/segyio later.
+# ---------------------------------------------------------------------------------
+
+# =============================
+# Directory Tree (reference)
+# =============================
+# Seis2D/
+# ├─ main.py
+# ├─ README.md
+# ├─ requirements.txt
+# ├─ .gitignore
+# ├─ config/
+# │   └─ settings.yaml
+# ├─ gui/
+# │   ├─ __init__.py
+# │   ├─ app.py
+# │   ├─ main_window.py
+# │   └─ views/
+# │       ├─ __init__.py
+# │       ├─ map_view.py        # (placeholder)
+# │       ├─ cross_section_view.py  # (placeholder)
+# │       └─ view3d.py          # (placeholder)
+# ├─ backend/
+# │   ├─ __init__.py
+# │   ├─ io/
+# │   │   ├─ __init__.py
+# │   │   └─ segy_reader.py     # (placeholder)
+# │   └─ project.py             # (minimal project model)
+# ├─ database/
+# │   ├─ __init__.py
+# │   └─ project_index.json     # (created at runtime)
+# ├─ resources/
+# │   ├─ __init__.py
+# │   └─ .gitkeep
+# ├─ templates/                  # (note: user spelled "templete"; we'll create both)
+# │   └─ .gitkeep
+# ├─ templete/
+# │   └─ .gitkeep
+# ├─ docs/
+# │   └─ roadmap.md
+# └─ scripts/
+#     ├─ setup_venv.ps1
+#     └─ run.ps1
+
+
+# =============================
+# File: README.md
+# =============================
+# A short getting-started. Place at Seis2D/README.md
+
+"""
+# Seis2D (Lightweight Scaffold)
+
+A minimal, piece-by-piece starter for a 2D seismic line viewer destined to grow into a pseudo-3D merger. Initial goal: spin up a PyQt6 window with a clean folder structure so we can iterate safely.
+
+## Quickstart (Windows)
+
+```pwsh
+# From: C:\Users\hafiz.baharuddin\Documents\Python
+mkdir Seis2D
+cd Seis2D
+
+# (Optional) create venv
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+
+# Run
+python main.py
+```
+
+## Roadmap (very light, we add later)
+- [ ] Add map, cross-section, 3D placeholder tabs
+- [ ] Implement SEG-Y reader (segyio first; obspy fallback)
+- [ ] Header audit (XY/CDP/scale factors)
+- [ ] CRS handling (EPSG + unit scaling)
+- [ ] Pseudo-3D gridding scaffold
+
+"""
+
+
+# =============================
+# File: requirements.txt (minimal for now)
+# =============================
+
+"""
+PyQt6>=6.6
+# We'll add later as features land:
+# numpy
+# pyqtgraph
+# segyio
+# obspy
+"""
+
+
+# =============================
+# File: .gitignore
+# =============================
+
+"""
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Editors
+.vscode/
+.idea/
+
+# Data
+*.sgy
+*.segy
+*.seis
+*.sgl
+*.zarr
+*.npz
+*.h5
+
+# Local files
+/database/project_index.json
+"""
+
+
+# =============================
+# File: config/settings.yaml
+# =============================
+
+"""
+app:
+  name: "Seis2D"
+  version: "0.0.1"
+  organization: "SeisLab"
+  geometry:
+    width: 1200
+    height: 800
+paths:
+  database: "database/project_index.json"
+  last_open_dir: "C:/Users/hafiz.baharuddin/Documents"
+"""
+
+
+# =============================
+# File: main.py  (entry point – super minimal)
+# =============================
+
+from gui.app import run_app
+
+if __name__ == "__main__":
+    run_app()
+
+
+# =============================
+# File: gui/__init__.py
+# =============================
+
+__all__ = ["app", "main_window"]
+
+
+# =============================
+# File: gui/app.py
+# =============================
+
+from __future__ import annotations
+import sys
+from PyQt6 import QtWidgets
+from .main_window import MainWindow
+
+def run_app():
+    app = QtWidgets.QApplication(sys.argv)
+    win = MainWindow()
+    win.show()
+    sys.exit(app.exec())
+
+
+# =============================
+# File: gui/main_window.py
+# =============================
+
+from __future__ import annotations
+from PyQt6 import QtWidgets, QtGui
+
+class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("Seis2D – Starter")
+        self.resize(1200, 800)
+
+        # Central placeholder: tabs to be filled step-by-step later
+        self.tabs = QtWidgets.QTabWidget()
+        self.tabs.addTab(self._make_placeholder("Welcome"), "Welcome")
+        self.tabs.addTab(self._make_placeholder("Map (2D) – coming soon"), "Map 2D")
+        self.tabs.addTab(self._make_placeholder("Cross-section – coming soon"), "Cross-section")
+        self.tabs.addTab(self._make_placeholder("3D – coming soon"), "3D")
+
+        self.setCentralWidget(self.tabs)
+
+        # Minimal menu to grow later
+        self._build_menu()
+        self._build_toolbar()
+
+    def _make_placeholder(self, text: str) -> QtWidgets.QWidget:
+        w = QtWidgets.QWidget()
+        layout = QtWidgets.QVBoxLayout(w)
+        label = QtWidgets.QLabel(text)
+        label.setAlignment(QtGui.Qt.AlignmentFlag.AlignCenter)
+        layout.addStretch(1)
+        layout.addWidget(label)
+        layout.addStretch(1)
+        return w
+
+    def _build_menu(self):
+        m_file = self.menuBar().addMenu("File")
+        act_quit = m_file.addAction("Quit")
+        act_quit.triggered.connect(self.close)
+
+    def _build_toolbar(self):
+        tb = self.addToolBar("Main")
+        tb.setMovable(False)
+        # Placeholders: Import SEG-Y, Save Project, Settings (to be wired later)
+        tb.addAction("Import SEG-Y")
+        tb.addAction("Save Project")
+        tb.addAction("Settings")
+
+
+# =============================
+# File: gui/views/__init__.py
+# =============================
+
+# Placeholders for future view widgets
+
+
+# =============================
+# File: gui/views/map_view.py (placeholder)
+# =============================
+
+from __future__ import annotations
+from PyQt6 import QtWidgets
+
+class MapView(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(QtWidgets.QLabel("Map view placeholder – add pyqtgraph later"))
+
+
+# =============================
+# File: gui/views/cross_section_view.py (placeholder)
+# =============================
+
+from __future__ import annotations
+from PyQt6 import QtWidgets
+
+class CrossSectionView(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(QtWidgets.QLabel("Cross-section placeholder – add ImageView later"))
+
+
+# =============================
+# File: gui/views/view3d.py (placeholder)
+# =============================
+
+from __future__ import annotations
+from PyQt6 import QtWidgets
+
+class ThreeDView(QtWidgets.QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        layout = QtWidgets.QVBoxLayout(self)
+        layout.addWidget(QtWidgets.QLabel("3D placeholder – add GLViewWidget later"))
+
+
+# =============================
+# File: backend/__init__.py
+# =============================
+
+__all__ = ["project"]
+
+
+# =============================
+# File: backend/project.py (minimal project model)
+# =============================
+
+from __future__ import annotations
+from dataclasses import dataclass, field, asdict
+from typing import Dict, Any
+import json
+import os
+
+@dataclass
+class Project:
+    name: str = "Untitled"
+    version: str = "0.0.1"
+    lines: Dict[str, Any] = field(default_factory=dict)
+
+    def save(self, path: str):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump(asdict(self), f, indent=2)
+
+    @staticmethod
+    def load(path: str) -> "Project":
+        with open(path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        p = Project()
+        p.name = data.get('name', p.name)
+        p.version = data.get('version', p.version)
+        p.lines = data.get('lines', {})
+        return p
+
+
+# =============================
+# File: backend/io/__init__.py
+# =============================
+
+__all__ = ["segy_reader"]
+
+
+# =============================
+# File: backend/io/segy_reader.py (placeholder)
+# =============================
+
+from __future__ import annotations
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class SegyLineMeta:
+    name: str
+    path: str
+    n_traces: int = 0
+    n_samples: int = 0
+    dt_us: float = 1000.0
+    x_field: Optional[str] = None
+    y_field: Optional[str] = None
+    cdp_field: Optional[str] = None
+
+# Later we'll implement actual reading via segyio / obspy.
+# For now, we keep an interface stub so other parts can depend on it lightly.
+
+
+# =============================
+# File: database/__init__.py
+# =============================
+
+# Database package placeholder (JSON-backed index).
+
+
+# =============================
+# File: resources/__init__.py
+# =============================
+
+# Static resources (icons, qss, etc.) go here later.
+
+
+# =============================
+# File: docs/roadmap.md
+# =============================
+
+"""
+# Seis2D Roadmap (initial)
+
+- Milestone 1: Minimal window + skeleton (this commit)
+- Milestone 2: Add Map/Cross-section/3D placeholder widgets
+- Milestone 3: Implement Import SEG-Y dialog and metadata preview
+- Milestone 4: Plot 2D polylines from XY headers (pyqtgraph)
+- Milestone 5: Show cross-section amplitudes (ImageView)
+- Milestone 6: 3D polylines (GLViewWidget)
+- Milestone 7: Header audit & CRS handling
+- Milestone 8: Pseudo-3D gridding prototype
+"""
+
+
+# =============================
+# File: scripts/setup_venv.ps1
+# =============================
+
+"""
+$ErrorActionPreference = 'Stop'
+Write-Host "Creating virtual environment..."
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+Write-Host "Installing dependencies..."
+pip install -r requirements.txt
+Write-Host "Done. Run with: python main.py"
+"""
+
+
+# =============================
+# File: scripts/run.ps1
+# =============================
+
+"""
+.\.venv\Scripts\Activate.ps1
+python main.py
+"""

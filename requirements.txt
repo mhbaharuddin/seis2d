@@ -1,0 +1,6 @@
+PyQt6>=6.6
+# We'll add later as features land:
+# numpy
+# pyqtgraph
+# segyio
+# obspy

@@ -1,0 +1,10 @@
+app:
+  name: "Seis2D"
+  version: "0.0.1"
+  organization: "SeisLab"
+  geometry:
+    width: 1200
+    height: 800
+paths:
+  database: "database/project_index.json"
+  last_open_dir: "C:/Users/hafiz.baharuddin/Documents"

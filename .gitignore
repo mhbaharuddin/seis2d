@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+
+# Editors
+.vscode/
+.idea/
+
+# Data
+*.sgy
+*.segy
+*.seis
+*.sgl
+*.zarr
+*.npz
+*.h5
+
+# Local files
+/database/project_index.json
