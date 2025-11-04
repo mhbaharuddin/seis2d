@@ -1,6 +1,5 @@
 PyQt6>=6.6
-# We'll add later as features land:
-# numpy
-# pyqtgraph
-# segyio
-# obspy
+numpy>=1.24
+pyqtgraph>=0.13
+PyOpenGL>=3.1
+segyio>=1.9
