@@ -1,31 +1,44 @@
-<<<<<<< HEAD
-# Seis2D (Lightweight Scaffold)
+# Seis2D
 
-A minimal, piece-by-piece starter for a 2D seismic line viewer destined to grow into a pseudo-3D merger. Initial goal: spin up a PyQt6 window with a clean folder structure so we can iterate safely.
+Seis2D is a lightweight PyQt6 desktop viewer for 2D seismic SEG-Y lines.  It lets you
+load multiple lines, inspect the trace distribution in map view, explore amplitudes
+along any line in a cross-section panel, and preview all loaded sections in a 3D
+scene.  The codebase is intentionally compact so that new interpretation features can
+be added step-by-step.
 
-## Quickstart (Windows)
+## Features
 
-```pwsh
-# From: C:\Users\hafiz.baharuddin\Documents\Python
-mkdir Seis2D
-cd Seis2D
+* **SEG-Y import** – load one or many 2D SEG-Y files at once.  Header coordinate
+  scalars are honoured so traces land in their proper map positions.
+* **Cross-section viewer** – select any loaded line and visualise amplitudes as an
+  image.  Axes honour cumulative trace distance (horizontal) and time in milliseconds
+  (vertical).
+* **Map view** – see every line projected in map space to quickly understand survey
+  coverage.
+* **3D overview** – stack all 2D sections in a 3D OpenGL scene.  Each section is
+  down-sampled automatically so even large surveys remain responsive.  (A dedicated
+  3D cube merge workflow will arrive later.)
 
-# (Optional) create venv
+## Quick start
+
+```bash
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
+source .venv/bin/activate  # Linux/macOS
+# .venv\Scripts\activate   # Windows PowerShell
 pip install -r requirements.txt
-
-# Run
 python main.py
 ```
 
-## Roadmap (very light, we add later)
-- [ ] Add map, cross-section, 3D placeholder tabs
-- [ ] Implement SEG-Y reader (segyio first; obspy fallback)
-- [ ] Header audit (XY/CDP/scale factors)
-- [ ] CRS handling (EPSG + unit scaling)
-- [ ] Pseudo-3D gridding scaffold
-=======
-# seis2d
-Lightweight PyQt6 scaffold for 2D seismic viewer
->>>>>>> origin/main
+Select **Import SEG-Y…** from the toolbar or File menu and choose one or more SEG-Y
+files.  The map, cross-section, and 3D tabs update automatically after import.  Any
+files that fail to load will be reported in a message dialog with details to help you
+troubleshoot header issues.
+
+## Roadmap
+
+* Merge multiple 2D lines into a full 3D volume.
+* Project/project-file management.
+* Inline/slice navigation controls for the 3D view.
+* Basic interpretation overlays (horizons, faults, wells).
+
+Contributions via pull requests are welcome!
