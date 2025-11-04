@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Seis2D (Lightweight Scaffold)
 
 A minimal, piece-by-piece starter for a 2D seismic line viewer destined to grow into a pseudo-3D merger. Initial goal: spin up a PyQt6 window with a clean folder structure so we can iterate safely.
@@ -24,3 +25,7 @@ python main.py
 - [ ] Header audit (XY/CDP/scale factors)
 - [ ] CRS handling (EPSG + unit scaling)
 - [ ] Pseudo-3D gridding scaffold
+=======
+# seis2d
+Lightweight PyQt6 scaffold for 2D seismic viewer
+>>>>>>> origin/main
