@@ -17,20 +17,30 @@ class CrossSectionView(QtWidgets.QWidget):
         self._current: Optional[str] = None
 
         layout = QtWidgets.QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
 
         control_bar = QtWidgets.QHBoxLayout()
+        title = QtWidgets.QLabel("Cross-section")
+        title.setStyleSheet("color: #e5e7eb; font-weight: 700;")
+        control_bar.addWidget(title)
+
+        control_bar.addSpacing(16)
         control_bar.addWidget(QtWidgets.QLabel("Line:"))
         self.combo = QtWidgets.QComboBox()
         self.combo.currentTextChanged.connect(self._on_line_changed)
         control_bar.addWidget(self.combo, 1)
+
         self.info_label = QtWidgets.QLabel("Load a SEG-Y line to begin")
-        self.info_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter)
+        self.info_label.setAlignment(
+            QtCore.Qt.AlignmentFlag.AlignRight | QtCore.Qt.AlignmentFlag.AlignVCenter
+        )
+        self.info_label.setStyleSheet("color: #aeb9cc;")
         control_bar.addWidget(self.info_label, 2)
         layout.addLayout(control_bar)
 
         self.plot_widget = pg.GraphicsLayoutWidget()
-        self.plot_widget.setBackground("k")
+        self.plot_widget.setBackground("#0f172a")
         self.plot_item = self.plot_widget.addPlot()
         self.plot_item.showGrid(x=True, y=True, alpha=0.25)
         self.plot_item.invertY(True)
@@ -111,7 +121,8 @@ class CrossSectionView(QtWidgets.QWidget):
         self.plot_item.setRange(xRange=(x_min, x_max), yRange=(y_min, y_max))
 
         self.info_label.setText(
-            f"{line.meta.name}: {line.meta.n_traces} traces · {line.meta.n_samples} samples · dt={line.meta.dt_us/1000:.2f} ms"
+            f"{line.meta.name}: {line.meta.n_traces:,} traces · "
+            f"{line.meta.n_samples:,} samples · dt={line.meta.dt_us / 1000:.2f} ms"
         )
 
     def _update_placeholder(self):
