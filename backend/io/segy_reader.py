@@ -12,6 +12,7 @@ except ImportError as exc:  # pragma: no cover - segyio required at runtime
         "segyio is required to read SEG-Y files. Install it via `pip install segyio`."
     ) from exc
 
+
 @dataclass
 class SegyLineMeta:
     """Summary information about a SEG-Y 2D line."""
@@ -41,7 +42,14 @@ class SegyLine:
     cdp: np.ndarray  # (n_traces,)
 
     def amplitude_range(self) -> tuple[float, float]:
-        return float(np.nanmin(self.samples)), float(np.nanmax(self.samples))
+        finite = self.samples[np.isfinite(self.samples)]
+        if finite.size == 0:
+            return 0.0, 1.0
+        amin = float(np.nanmin(finite))
+        amax = float(np.nanmax(finite))
+        if amin == amax:
+            amax = amin + 1.0
+        return amin, amax
 
     def line_length(self) -> float:
         return float(self.distance[-1]) if len(self.distance) else 0.0
@@ -133,8 +141,10 @@ def _read_samples(fh: "segyio.SegyFile") -> np.ndarray:
 
 def _read_sample_interval_us(fh: "segyio.SegyFile") -> float:
     interval = segyio.tools.dt(fh)
-    if interval is None:
+    if interval is None or interval <= 0:
         interval = float(fh.bin[segyio.BinField.Interval])
+    if interval <= 0:
+        interval = 1000.0
     return float(interval)
 
 
@@ -155,21 +165,46 @@ def _read_and_scale_attribute(
     fh: "segyio.SegyFile", field: int, scalars: np.ndarray
 ) -> np.ndarray:
     values = _read_attribute(fh, field)
-    scaled = np.empty_like(values, dtype=np.float64)
-    for idx, (value, scalar) in enumerate(zip(values, scalars, strict=True)):
-        if scalar == 0:
-            scaled[idx] = value
-        elif scalar > 0:
-            scaled[idx] = value / scalar
-        else:
-            scaled[idx] = value * abs(scalar)
-    return scaled.astype(np.float64)
+    return _apply_coordinate_scalar(values, scalars)
+
+
+def _apply_coordinate_scalar(values: np.ndarray, scalars: np.ndarray) -> np.ndarray:
+    """Apply SEG-Y coordinate scalars.
+
+    SEG-Y coordinate scalars are applied as:
+    * 0: no scaling
+    * positive: multiply coordinates by the scalar
+    * negative: divide coordinates by the absolute scalar
+    """
+
+    values = np.asarray(values, dtype=np.float64)
+    scalars = np.asarray(scalars, dtype=np.float64)
+
+    scaled = values.copy()
+    positive = scalars > 0
+    negative = scalars < 0
+
+    scaled[positive] = values[positive] * scalars[positive]
+    scaled[negative] = values[negative] / np.abs(scalars[negative])
+    return scaled.astype(np.float64, copy=False)
 
 
 def _compute_cumulative_distance(x: np.ndarray, y: np.ndarray) -> np.ndarray:
     if x.size == 0:
         return np.array([], dtype=np.float64)
+
     coords = np.column_stack((x, y))
+    finite = np.isfinite(coords).all(axis=1)
+    if not np.any(finite):
+        return np.arange(x.size, dtype=np.float64)
+
+    coords = coords.copy()
+    if not np.all(finite):
+        valid_idx = np.flatnonzero(finite)
+        invalid_idx = np.flatnonzero(~finite)
+        coords[~finite, 0] = np.interp(invalid_idx, valid_idx, coords[finite, 0])
+        coords[~finite, 1] = np.interp(invalid_idx, valid_idx, coords[finite, 1])
+
     diffs = np.diff(coords, axis=0)
     segment_lengths = np.linalg.norm(diffs, axis=1)
     distance = np.concatenate(([0.0], np.cumsum(segment_lengths)))
