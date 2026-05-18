@@ -19,17 +19,22 @@ class ThreeDView(QtWidgets.QWidget):
         self._surface_items: List[gl.GLSurfacePlotItem] = []
 
         layout = QtWidgets.QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
+
+        header = QtWidgets.QLabel("3D section overview")
+        header.setStyleSheet("color: #e5e7eb; font-weight: 700;")
+        layout.addWidget(header)
 
         self.view = gl.GLViewWidget()
-        self.view.setBackgroundColor((10, 10, 10))
+        self.view.setBackgroundColor((15, 23, 42))
         self.view.opts["distance"] = 8000
         self.view.setCameraPosition(elevation=25, azimuth=35)
         layout.addWidget(self.view, 1)
 
         self._no_data_label = QtWidgets.QLabel("Load SEG-Y lines to see them in 3D")
         self._no_data_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self._no_data_label.setStyleSheet("color: #ccc;")
+        self._no_data_label.setStyleSheet("color: #aeb9cc;")
         layout.addWidget(self._no_data_label)
 
         grid = gl.GLGridItem()
@@ -64,7 +69,10 @@ class ThreeDView(QtWidgets.QWidget):
                 continue
             self.view.addItem(surface)
             self._surface_items.append(surface)
-            bounds.append((line.x.min(), line.x.max(), line.y.min(), line.y.max(), line.times_ms.max()))
+
+            line_bounds = _line_bounds(line)
+            if line_bounds is not None:
+                bounds.append(line_bounds)
 
         if bounds:
             xmin = min(b[0] for b in bounds)
@@ -80,10 +88,20 @@ def _global_amplitude_bounds(lines: Dict[str, SegyLine]) -> tuple[float, float]:
     mins = []
     maxs = []
     for line in lines.values():
+        if line.samples.size == 0:
+            continue
         amin, amax = line.amplitude_range()
         mins.append(amin)
         maxs.append(amax)
-    return (min(mins), max(maxs)) if mins and maxs else (0.0, 1.0)
+
+    if not mins or not maxs:
+        return 0.0, 1.0
+
+    global_min = min(mins)
+    global_max = max(maxs)
+    if global_min == global_max:
+        global_max = global_min + 1.0
+    return global_min, global_max
 
 
 def _build_surface_for_line(
@@ -106,11 +124,22 @@ def _build_surface_for_line(
     if data.size == 0 or x.size == 0 or y.size == 0 or times.size == 0:
         return None
 
+    finite_traces = np.isfinite(x) & np.isfinite(y)
+    finite_times = np.isfinite(times)
+    if not np.any(finite_traces) or not np.any(finite_times):
+        return None
+
+    data = data[np.ix_(finite_traces, finite_times)]
+    x = x[finite_traces]
+    y = y[finite_traces]
+    times = times[finite_times]
+
     x_grid = np.repeat(x[:, None], times.size, axis=1)
     y_grid = np.repeat(y[:, None], times.size, axis=1)
     z_grid = -np.repeat(times[None, :], x.size, axis=0)
 
-    normalized = np.clip((data - global_min) / (global_max - global_min + 1e-6), 0, 1)
+    amplitude_span = max(global_max - global_min, 1e-6)
+    normalized = np.clip((np.nan_to_num(data) - global_min) / amplitude_span, 0, 1)
     colors = colormap.map(normalized, mode="float")
 
     surface = gl.GLSurfacePlotItem(
@@ -123,3 +152,15 @@ def _build_surface_for_line(
     )
     surface.setGLOptions("translucent")
     return surface
+
+
+def _line_bounds(line: SegyLine) -> tuple[float, float, float, float, float] | None:
+    finite_xy = np.isfinite(line.x) & np.isfinite(line.y)
+    finite_t = np.isfinite(line.times_ms)
+    if not np.any(finite_xy) or not np.any(finite_t):
+        return None
+
+    x = line.x[finite_xy]
+    y = line.y[finite_xy]
+    t = line.times_ms[finite_t]
+    return float(x.min()), float(x.max()), float(y.min()), float(y.max()), float(t.max())
