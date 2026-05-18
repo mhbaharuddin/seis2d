@@ -15,10 +15,15 @@ class MapView(QtWidgets.QWidget):
         super().__init__(parent)
         self._lines: Dict[str, SegyLine] = {}
         layout = QtWidgets.QVBoxLayout(self)
-        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setContentsMargins(10, 10, 10, 10)
+        layout.setSpacing(8)
+
+        header = QtWidgets.QLabel("Survey map")
+        header.setStyleSheet("color: #e5e7eb; font-weight: 700;")
+        layout.addWidget(header)
 
         self.plot_widget = pg.PlotWidget()
-        self.plot_widget.setBackground("k")
+        self.plot_widget.setBackground("#0f172a")
         self.plot_widget.showGrid(x=True, y=True, alpha=0.25)
         self.plot_widget.setLabel("bottom", "Easting", units="m")
         self.plot_widget.setLabel("left", "Northing", units="m")
@@ -28,7 +33,7 @@ class MapView(QtWidgets.QWidget):
 
         self._no_data_label = QtWidgets.QLabel("Load SEG-Y lines to populate the map")
         self._no_data_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        self._no_data_label.setStyleSheet("color: #ccc;")
+        self._no_data_label.setStyleSheet("color: #aeb9cc;")
         layout.addWidget(self._no_data_label)
 
         self._update_plot()
@@ -46,6 +51,7 @@ class MapView(QtWidgets.QWidget):
             self._legend.clear()
 
         if not self._lines:
+            self._no_data_label.setText("Load SEG-Y lines to populate the map")
             self._no_data_label.show()
             return
 
@@ -59,8 +65,18 @@ class MapView(QtWidgets.QWidget):
                 continue
             x = line.x[mask]
             y = line.y[mask]
-            pen = pg.mkPen(color=pg.intColor(idx), width=2)
+            color = pg.intColor(idx)
+            pen = pg.mkPen(color=color, width=2)
             self.plot_widget.plot(x, y, pen=pen, name=name)
+            self.plot_widget.plot(
+                x[:: max(1, x.size // 60)],
+                y[:: max(1, y.size // 60)],
+                pen=None,
+                symbol="o",
+                symbolSize=5,
+                symbolBrush=color,
+                symbolPen=None,
+            )
             bounds.append((x.min(), x.max(), y.min(), y.max()))
 
         if bounds:
@@ -71,4 +87,5 @@ class MapView(QtWidgets.QWidget):
             self.plot_widget.setXRange(xmin, xmax, padding=0.1)
             self.plot_widget.setYRange(ymin, ymax, padding=0.1)
         else:
+            self._no_data_label.setText("No valid coordinates found in the loaded files")
             self._no_data_label.show()
